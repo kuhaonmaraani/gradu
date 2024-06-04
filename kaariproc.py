@@ -15,7 +15,7 @@ class KaariFiltteri():
         self.porder = polyorder
         
 
-    def run(self, path, lats=[59, 71], lons=[19, 32], save_df=False):
+    def run(self, path, lats=[59, 71], lons=[19, 32], save_df=False, filename='filtered_data.csv'):
         
         print('Reading data...')
 
@@ -27,17 +27,21 @@ class KaariFiltteri():
             raise ValueError('Error: wrong data file type, only .h5 and .csv accepted.')
         print('Done.')
 
-        if save_df:
-            print('Saving data...')
-            df.to_csv('filtered_data.csv', index=False)  # Save the DataFrame to a CSV file
-            print('Data saved.')
-
         print('Processing data...')
         df = self.process_data(df)
         print('Done.')
+
         print('Filtering data...')
         df = self.filter_data(df)
-        print('All done.')
+
+        if save_df:
+            print('Done.')
+
+            print('Saving data...')
+            df.to_csv(filename, index=False)  # Save the DataFrame to a CSV file
+            print(f'Data saved in {filename}.')
+        
+        print('All done. Exiting.')
 
         return df
 
@@ -56,31 +60,43 @@ class KaariFiltteri():
     def calculate_time_diff(self, group):
         time_diff = group['datetime'].diff().dt.total_seconds()
         new_group = time_diff.gt(300).cumsum()
-        group['kaari'] = new_group
+        group['curve_id'] = new_group
         
         return group
     
-    def process_data(self, df):
+    def process_data(self, ogdf):
 
-        df = df.copy()
+        df = ogdf.copy()
+
+            
+        # Combine columns to one datetime column
+        try:
+            df['minute'] = df['min']
+            df['second'] = df['sec']
+            df['datetime'] = pd.to_datetime(df[['year', 'month', 'day', 'hour', 'minute', 'second']])
+        except:
+            raise IndexError('The needed datetime columns not found. Please, make sure that the data contains the following columns: year, month, day, hour, minute and second')
         
-        # Combine columns to one dtatime column
-        df['minute'] = df['min']
-        df['second'] = df['sec']
-        df['datetime'] = pd.to_datetime(df[['year', 'month', 'day', 'hour', 'minute', 'second']])
+        columns = ['datetime', 'gps_site', 'sat_id', 'gdlatr', 'gdlonr', 'los_tec', 'tec', 'azm', 'elm', 'gdlat', 'glon', 'gnss_type']
+
+        # Check if the needed columns are in the dataframe
+        for column in columns:
+            if column not in df:
+                print(f'WARNING: the dataframe doesnt have a column called {column}. A column of zeros will be created.')
+                df[column] = 0
 
         # Pick only needed columns
-        df = df[['datetime', 'gps_site', 'sat_id', 'gdlatr', 'gdlonr', 'los_tec', 'tec', 'azm', 'elm', 'gdlat', 'glon', 'gnss_type']]
+        df = df[columns]
 
         # Calculate VTEC from STEC
         df.loc[:, 'slant_f'] = 1 + 16 * (0.53 - df['elm'] / 180) ** 3
         df.loc[:, 'vtec'] = df['los_tec'] / df['slant_f']
 
         # Create ids for receiver-satellite pairs
-        df.loc[:, 'id'] = df['gnss_type'].astype(str) + df['gps_site'].astype(str) + df['sat_id'].astype(str)
+        df.loc[:, 'pair_id'] = df['gnss_type'].astype(str) + df['gps_site'].astype(str) + df['sat_id'].astype(str)
 
         # Apply the function to each group defined by the index
-        df = df.groupby('id').apply(self.calculate_time_diff)
+        df = df.groupby('pair_id').apply(self.calculate_time_diff)
         df.reset_index(inplace=True, drop=True) 
 
         return df
@@ -94,7 +110,7 @@ class KaariFiltteri():
     
     def plot_kaaret(self, df):
 
-        df.plot('datetime', 'vtec', 'scatter', c='kaari', colormap='plasma')
+        df.plot('datetime', 'vtec', 'scatter', c='curve_id', colormap='plasma')
         plt.xlabel('Datetime')
         plt.ylabel('VTEC')
         plt.title('satelliitti-vastaanotin parin kaaret, laskettu vtec')
@@ -129,18 +145,18 @@ class KaariFiltteri():
 
 if __name__ == '__main__':
 
-    path = 'data/filtered_data.csv'
+    path = 'data/los_20131105.001.h5'
     filtteri = KaariFiltteri()
-    df = filtteri.run(path=path)
+    df = filtteri.run(path=path, save_df=True, filename='data/filtered2013.csv')
 
-    idlist = list(df['id'].unique())
-    print(df.loc[(df['id'] == idlist[3])]['kaari'].unique())
-    df_kaaret = df.loc[df['id'] == idlist[10]]
-    df_signaali = df_kaaret.loc[df_kaaret['kaari'] == 0]
+    idlist = list(df['pair_id'].unique())
+    # print(df.loc[(df['id'] == idlist[3])]['curve_id'].unique())
+    df_kaaret = df.loc[df['pair_id'] == idlist[10]]
+    df_signaali = df_kaaret.loc[df_kaaret['curve_id'] == 0]
 
     # filtteri.plot_kaaret(df_kaaret)
     # filtteri.plot_anomalies(df_signaali)
-    filtteri.plot_smoothed(df_signaali)
+    # filtteri.plot_smoothed(df_signaali)
 
 
 
