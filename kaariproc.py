@@ -9,13 +9,11 @@ from scipy import signal
 class KaariFiltteri():
 
     def __init__(self, window_lenght=60, polyorder=1):
-        # self.lats = lats
-        # self.lons = lons
         self.wl = window_lenght
         self.porder = polyorder
         
 
-    def run(self, path, lats=[59, 71], lons=[19, 32], save_df=False, filename='filtered_data.csv'):
+    def importdf(self, path, lats=[59, 71], lons=[19, 32], save_df=False, filename='filtered_data.csv'):
         
         print('Reading data...')
 
@@ -38,7 +36,7 @@ class KaariFiltteri():
             print('Done.')
 
             print('Saving data...')
-            df.to_csv(filename, index=False)  # Save the DataFrame to a CSV file
+            df.to_csv(filename, index=False)
             print(f'Data saved in {filename}.')
         
         print('All done. Exiting.')
@@ -47,7 +45,6 @@ class KaariFiltteri():
 
     def read_data(self, path, lats, lons):
 
-        # Access the dataset and filter according to lat and lon ranges
         with h5py.File(path, 'r') as f:
             dset = f['Data']['Table Layout']    # type: ignore
             filtered_data = dset[(dset['gdlonr'] >= min(lons)) & (dset['gdlonr'] <= max(lons)) # type: ignore
@@ -117,26 +114,22 @@ class KaariFiltteri():
         plt.show()
     
     def plot_smoothed(self, df):
-        # Plot both lines on the same plot
+     
         plt.plot(df['datetime'], df['vtec'], alpha=0.7, label='VTEC')
         plt.plot(df['datetime'], df['filtered'], label='Filtered')
 
-        # Add labels and legend
         plt.xlabel('Datetime')
         plt.ylabel('Value')
         plt.legend()
 
-        # Show the plot
         plt.show()
 
     def plot_anomalies(self, df):
         plt.plot(df['datetime'], df['blrmvd'])
 
-        # Add labels and legend
         plt.xlabel('Datetime')
         plt.ylabel('Value')
 
-        # Show the plot
         plt.show()
 
 
@@ -145,14 +138,14 @@ class KaariFiltteri():
 
 if __name__ == '__main__':
 
-    path = 'data/los_20131105.001.h5'
+    path = 'data/los/los_20230319.001.h5'
     filtteri = KaariFiltteri()
-    df = filtteri.run(path=path, save_df=True, filename='data/filtered2013.csv')
+    df = filtteri.importdf(path=path, save_df=True, filename='data/filtered20230319.csv')
 
-    idlist = list(df['pair_id'].unique())
+    # idlist = list(df['pair_id'].unique())
     # print(df.loc[(df['id'] == idlist[3])]['curve_id'].unique())
-    df_kaaret = df.loc[df['pair_id'] == idlist[10]]
-    df_signaali = df_kaaret.loc[df_kaaret['curve_id'] == 0]
+    # df_kaaret = df.loc[df['pair_id'] == idlist[10]]
+    # df_signaali = df_kaaret.loc[df_kaaret['curve_id'] == 0]
 
     # filtteri.plot_kaaret(df_kaaret)
     # filtteri.plot_anomalies(df_signaali)
