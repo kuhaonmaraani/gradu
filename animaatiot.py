@@ -18,7 +18,7 @@ class Animator():
         self.elv = elv
         self.daytime = daytime
 
-    def importdf(self, path, folder='animations', save_df=False, filename='processed_data.csv'):
+    def importdf(self, path, save_df=False, filename='processed_data.csv'):
         print('Reading data...')
         if path[-3:] == 'csv':
             df = self.read_data(path)
@@ -38,6 +38,28 @@ class Animator():
         print('All done. Exiting.')
 
         return df
+    
+    def animate_pp(self, data, folder='animations', blip=False, filename='pp_animation.gif'):
+        print('Creating the animation...')
+        if not blip:
+            data['datetime'] = data['datetime'].dt.floor('min')
+
+        self.data = data
+        self.frames = sorted(self.data['datetime'].unique())
+
+        self.init_animation('pp')
+
+        animation = FuncAnimation(self.fig, self.pp_fig, frames=self.frames[1:], interval=30)
+
+        if folder[-1:] != '/' and len(folder) > 0:
+            folder += '/'
+
+        print('Done.')
+        print('Saving the animation...')
+
+        animation.save(f'{folder}{filename}', writer='pillow')
+
+        print('All done. Exiting.')
 
 
 
@@ -72,9 +94,7 @@ class Animator():
 
         data = data[(data['datetime'].dt.hour >=  self.daytime[0]) & 
                     (data['datetime'].dt.hour < self.daytime[1]) & 
-                    (data['elm'] > self.elv)]
-
-            data['datetime'] = data['datetime'].dt.floor('min')  
+                    (data['elm'] > self.elv)]  
         
         return data
 
@@ -86,11 +106,54 @@ class Animator():
         return group[(group['datetime'] >= start_time) & (group['datetime'] <= end_time)]
 
 
-    def animate_pp(self, df, folder='animations', blip=False):
 
-        if blip:
-            pass
 
+
+    def init_animation(self, type):
+        self.fig, self.ax = plt.subplots(figsize=(10, 10), subplot_kw={'projection': ccrs.PlateCarree()})
+
+        self.ax.coastlines()
+        self.ax.add_feature(cfeature.BORDERS, linestyle=':')
+        self.ax.set_xticks(np.arange(self.lons[0], self.lons[1], 1))
+        self.ax.set_yticks(np.arange(self.lats[0], self.lats[1]))
+        self.ax.set_xlabel('Longitude')
+        self.ax.set_ylabel('Latitude')
+        self.ax.set_xlim(self.lons[0], self.lons[1])
+        self.ax.set_ylim(self.lats[0], self.lats[1])
+        self.ax.set_title(f'Baseline removed VTEC at {self.frames[0]}')
+
+        df0 = self.data.loc[self.data['datetime'] == self.frames[0]]
+
+        if type == 'pp':
+            contour = self.ax.scatter(df0['glon'], df0['gdlat'],c= df0['blrmvd'], cmap='plasma', vmin=-2, vmax=2)
+
+        self.fig.subplots_adjust(right=0.8)
+        cax = self.fig.add_axes([0.85, 0.155, 0.05, 0.67])
+
+        cbar = plt.colorbar(contour, cax=cax, orientation='vertical',
+                            extendrect = True, label='VTEC',
+                            ticks=np.arange(-2,2.5,0.5),
+                            boundaries = np.arange(-2,2.5,0.5), 
+                            extend='both'
+        ) 
+
+
+    def pp_fig(self, frame):
+        global ax
+
+        df1 = self.data.loc[self.data['datetime'] == frame]
+        self.ax.set_title(f'Baseline removed VTEC at {frame}')
+
+        for c in self.ax.collections:
+            c.remove()
+
+        self.ax.scatter(df1['glon'], df1['gdlat'],c= df1['blrmvd'], cmap='plasma', vmin=-2, vmax=2)                
+
+        
+
+        
+        
+        
 
 
 
@@ -114,109 +177,9 @@ class Animator():
 
 if __name__ == '__main__':
 
-    path = 'data/los/los_20231202.001.h5'
+    path = 'data/filtered2013.csv'
     animator = Animator()
-    animator.importdf(path=path, folder=folder)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    df = animator.importdf(path=path)
+    animator.animate_pp(df, folder='')
 
 
