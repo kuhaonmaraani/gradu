@@ -12,7 +12,7 @@ from scipy.stats import binned_statistic_2d as histo2D
 
 class Animator():
 
-    def __init__(self, lats=[59, 71], lons=[19, 32], elv=20, daytime=[6, 18]):
+    def __init__(self, lats=[59, 71], lons=[19, 32], elv=20, daytime=[6, 16]):
         self.lats = lats
         self.lons = lons
         self.elv = elv
@@ -115,7 +115,7 @@ class Animator():
 
 
     def animate_histo(self, data, folder='animations', blip=False, 
-                      filename='', res=0.5, method='nearest'):
+                      filename='', res=[0.15, 1], method='nearest'):
 
         print('Creating the histogram animation...')
         if not blip:
@@ -124,7 +124,7 @@ class Animator():
         self.data = data
         self.frames = sorted(self.data['datetime'].unique())
 
-        self.init_animation('histo')
+        self.init_animation('histo', res=res)
 
         animation = FuncAnimation(self.fig, self.histo_fig, frames=self.frames[1:], interval=80) # type: ignore
 
@@ -142,7 +142,7 @@ class Animator():
 
 
     def animate_griddata(self, data, folder='animations', blip=False, 
-                     filename='', res=0.5, method='nearest'):
+                     filename='', res=[0.15, 0.8], method='nearest'):
         print('Creating the griddata animation...')
         if not blip:
             data['datetime'] = data['datetime'].dt.floor('5min')
@@ -165,7 +165,7 @@ class Animator():
 
 
     def animate_all(self, data, folder='animations', blip=False,
-                    filenames={'pp':'', 'histo':'', 'grid':''}, res=0.5, method='nearest'):
+                    filenames={'pp':'', 'histo':'', 'grid':''}, res=[0.15,1], method='nearest'):
         
         if not blip:
             data['datetime'] = data['datetime'].dt.floor('5min')
@@ -219,7 +219,7 @@ class Animator():
     
 
 
-    def init_animation(self, type, res=0.5, method='nearest'):
+    def init_animation(self, type, res=[0.15,0.8], method='nearest'):
         self.fig, self.ax = plt.subplots(figsize=(10, 10), subplot_kw={'projection': ccrs.PlateCarree()})
 
         self.ax.coastlines()
@@ -239,21 +239,39 @@ class Animator():
 
         elif type == 'histo':
             self.res = res
-            self.ax.set_title(f'Baseline removed VTEC at {self.frames[0]} with resolution {res}')
+            self.ax.set_title(f'Baseline removed VTEC at {self.frames[0]}')
             statistic, x_edges, y_edges, _ = histo2D(
                     df0['glon'], df0['gdlat'], df0['blrmvd'], statistic='mean', 
-                    bins=[np.arange(self.lons[0], self.lons[1] + self.res, self.res), 
-                          np.arange(self.lats[0], self.lats[1] + self.res, self.res)]) # type: ignore
+                    bins=[np.arange(self.lons[0], self.lons[1] + self.res[0], self.res[0]), 
+                          np.arange(self.lats[0], self.lats[1] + self.res[0], self.res[0])]) # type: ignore
 
             X, Y = np.meshgrid((x_edges[:-1] + x_edges[1:]) / 2, (y_edges[:-1] + y_edges[1:]) / 2)
+
+            x_flat = X.flatten()
+            y_flat = Y.flatten()
+            z_flat = statistic.flatten()
+
+            valid = ~np.isnan(z_flat)
+            x_valid = x_flat[valid]
+            y_valid = y_flat[valid]
+            z_valid = z_flat[valid]
+
+            statistic, x_edges, y_edges, _ = histo2D(
+                    x_valid, y_valid, z_valid, statistic='mean', 
+                    bins=[np.arange(self.lons[0], self.lons[1] + self.res[1], self.res[1]), 
+                          np.arange(self.lats[0], self.lats[1] + self.res[1], self.res[1])]) # type: ignore
+            X, Y = np.meshgrid((x_edges[:-1] + x_edges[1:]) / 2, (y_edges[:-1] + y_edges[1:]) / 2)
+
             contour = self.ax.pcolormesh(X, Y, statistic.T, cmap='plasma', vmin=-2, vmax=2, 
                                 transform=ccrs.PlateCarree())
+            
+
         elif type == 'grid':
             self.res = res
             self.method = method
-            self.ax.set_title(f'Baseline removed binned vtec at {self.frames[0]} \nwith resolution {self.res} and {self.method} method')
-            self.x_grid = np.arange(min(self.data['glon']), max(self.data['glon']) + self.res, self.res)
-            self.y_grid = np.arange(min(self.data['gdlat']), max(self.data['gdlat']) + self.res, self.res)
+            self.ax.set_title(f'Baseline removed binned vtec at {self.frames[0]} and {self.method} method')
+            self.x_grid = np.arange(min(self.data['glon']), max(self.data['glon']) + self.res[0], self.res[0])
+            self.y_grid = np.arange(min(self.data['gdlat']), max(self.data['gdlat']) + self.res[0], self.res[0])
             self.X, self.Y = np.meshgrid(self.x_grid, self.y_grid)
 
             Z = griddata((df0['glon'], df0['gdlat']), df0['blrmvd'], (self.X, self.Y))
@@ -287,15 +305,32 @@ class Animator():
     def histo_fig(self, frame):
 
         df1 = self.data.loc[self.data['datetime'] == frame]
-        self.ax.set_title(f'Baseline removed VTEC at {frame} with resolution {self.res}')
+        self.ax.set_title(f'Baseline removed VTEC at {frame}')
 
         statistic, x_edges, y_edges, _ = histo2D(
                     df1['glon'], df1['gdlat'], df1['blrmvd'], statistic='mean', 
-                    bins=[np.arange(self.lons[0], self.lons[1] + self.res, self.res), 
-                          np.arange(self.lats[0], self.lats[1] + self.res, self.res)]) # type: ignore
+                    bins=[np.arange(self.lons[0], self.lons[1] + self.res[0], self.res[0]), 
+                          np.arange(self.lats[0], self.lats[1] + self.res[0], self.res[0])]) # type: ignore
         
         X, Y = np.meshgrid((x_edges[:-1] + x_edges[1:]) / 2, (y_edges[:-1] + y_edges[1:]) / 2)
 
+        x_flat = X.flatten()
+        y_flat = Y.flatten()
+        z_flat = statistic.flatten()
+
+        valid = ~np.isnan(z_flat)
+        x_valid = x_flat[valid]
+        y_valid = y_flat[valid]
+        z_valid = z_flat[valid]
+
+        statistic, x_edges, y_edges, _ = histo2D(
+                    x_valid, y_valid, z_valid, statistic='mean', 
+                    bins=[np.arange(self.lons[0], self.lons[1] + self.res[1], self.res[1]), 
+                          np.arange(self.lats[0], self.lats[1] + self.res[1], self.res[1])]) # type: ignore
+        X, Y = np.meshgrid((x_edges[:-1] + x_edges[1:]) / 2, (y_edges[:-1] + y_edges[1:]) / 2)
+
+        
+        
         for c in self.ax.collections:
             c.remove()
 
@@ -307,7 +342,7 @@ class Animator():
     def grid_fig(self, frame):
 
         df1 = self.data.loc[self.data['datetime'] == frame]
-        self.ax.set_title(f'Baseline removed binned vtec at {frame} \nwith resolution {self.res} and {self.method} method')
+        self.ax.set_title(f'Baseline removed binned vtec at {frame} {self.method} method')
         Z = griddata((df1['glon'], df1['gdlat']), df1['blrmvd'], (self.X, self.Y))
 
         for c in self.ax.collections:
@@ -341,19 +376,24 @@ if __name__ == '__main__':
     #          'data/filtered20230322.csv',
     #          'data/filtered20231202.csv']
 
-    path = 'data/filtered2017.csv'
+    path = 'data/filtered20230322.csv'
 
     animator = Animator()
 
     df = animator.importdf(path=path)
-    date = path[13:-4]
-    filenames = {'pp':f'pp_{date}.gif', 'histo':f'histo_{date}.gif', 'grid':f'grid_{date}.gif'}
-    animator.animate_all(df, folder='animations/ready/2017', filenames=filenames)
+    # date = path[13:-4]
+    # filenames = {'pp':f'pp_{date}.gif', 'histo':f'histo_{date}.gif', 'grid':f'grid_{date}.gif'}
+    # animator.animate_all(df, folder='animations/ready/2017', filenames=filenames)
 
     # for path in paths:
     #     df = animator.importdf(path=path)
     #     date = path[13:-4]
     #     filenames = {'pp':f'pp_{date}.gif', 'histo':f'histo_{date}.gif', 'grid':f'grid_{date}.gif'}
     #     animator.animate_all(df, folder='animations/ready/2023', filenames=filenames)
-
-
+    list = [[0.2, 0.8] 
+            ]
+    
+    for res in list:
+        string = (str(res[0])+str(res[1])).replace('.', '')
+        name = f'res{string}.gif'
+        animator.animate_histo(df, filename=name, folder='', res=res)
