@@ -13,12 +13,13 @@ class KaariFiltteri():
         self.porder = polyorder
         
 
-    def importdf(self, path, lats=[59, 71], lons=[19, 32], save_df=False, filename='filtered_data.csv'):
+    def importdf(self, path, lats=[59, 71], lons=[19, 32], save_df=False, 
+                 filename='filtered_data.csv', paiva=[6,16], min_el=20):
         
         print('Reading data...')
 
         if path[-2:] == 'h5':
-            df = self.read_data(path, lats, lons)
+            df = self.read_data(path, lats, lons, paiva, min_el)
         elif path[-3:] == 'csv':
             df = pd.read_csv(path)
         else:
@@ -43,12 +44,14 @@ class KaariFiltteri():
 
         return df
 
-    def read_data(self, path, lats, lons):
+    def read_data(self, path, lats, lons, paiva, min_el):
 
         with h5py.File(path, 'r') as f:
             dset = f['Data']['Table Layout']    # type: ignore
             filtered_data = dset[(dset['gdlonr'] >= min(lons)) & (dset['gdlonr'] <= max(lons)) # type: ignore
-                                 & (dset['gdlatr'] >= min(lats)) & (dset['gdlatr'] <= max(lats))]   # type: ignore
+                                 & (dset['gdlatr'] >= min(lats)) & (dset['gdlatr'] <= max(lats)) # type: ignore
+                                 & (dset['hour']) >= min(paiva) & (dset['hour'] <= max(paiva)) # type: ignore
+                                 & (dset['elm']) >= min_el]   # type: ignore
 
         df = pd.DataFrame(filtered_data) # type: ignore
 
@@ -140,7 +143,7 @@ if __name__ == '__main__':
 
     path = 'data/los/los_20230319.001.h5'
     filtteri = KaariFiltteri()
-    df = filtteri.importdf(path=path, save_df=True, filename='data/filtered20230319.csv')
+    df = filtteri.importdf(path=path, save_df=True, filename='testi.csv')
 
     # idlist = list(df['pair_id'].unique())
     # print(df.loc[(df['id'] == idlist[3])]['curve_id'].unique())
