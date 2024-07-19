@@ -4,6 +4,7 @@ from datetime import datetime
 import h5py
 import pandas as pd
 from scipy import signal
+from datetime import timedelta
 
 
 class KaariFiltteri():
@@ -32,6 +33,11 @@ class KaariFiltteri():
 
         print('Filtering data...')
         df = self.filter_data(df)
+        print('Done.')
+
+        print('Trimming the curves...')
+        df = self.process2(df)
+        df = df[['datetime', 'gdlat', 'glon', 'blrmvd']] ##SÄÄDÄ OUTPUT SARAKKEET
 
         if save_df:
             print('Done.')
@@ -43,21 +49,32 @@ class KaariFiltteri():
         print('All done. Exiting.')
 
         return df
-
+    
     def read_data(self, path, lats, lons, paiva, min_el):
+        min_lon, max_lon = min(lons), max(lons)
+        min_lat, max_lat = min(lats), max(lats)
+        min_hour, max_hour = min(paiva), max(paiva)
 
         with h5py.File(path, 'r') as f:
             dset = f['Data']['Table Layout']    # type: ignore
-            filtered_data = dset[(dset['gdlonr'] >= min(lons)) & (dset['gdlonr'] <= max(lons)) # type: ignore
-                                 & (dset['gdlatr'] >= min(lats)) & (dset['gdlatr'] <= max(lats)) # type: ignore
-                                 & (dset['hour']) >= min(paiva) & (dset['hour'] <= max(paiva)) # type: ignore
-                                 & (dset['elm']) >= min_el]   # type: ignore
+            # Read the necessary columns only
+            data = np.array(dset)
+        
+            # Apply the filters
+            mask = (
+                (data['gdlonr'] >= min_lon) & (data['gdlonr'] <= max_lon) &
+                (data['gdlatr'] >= min_lat) & (data['gdlatr'] <= max_lat) &
+                (data['hour'] >= min_hour) & (data['hour'] <= max_hour) &
+                (data['elm'] >= min_el)
+                )
+        
+            filtered_data = data[mask]
 
-        df = pd.DataFrame(filtered_data) # type: ignore
+        df = pd.DataFrame(filtered_data)  # type: ignore
 
         return df
     
-    def calculate_time_diff(self, group):
+    def calculate_time_diff(self, group): #separates satellite-receiver pair curves
         time_diff = group['datetime'].diff().dt.total_seconds()
         new_group = time_diff.gt(300).cumsum()
         group['curve_id'] = new_group
@@ -77,7 +94,7 @@ class KaariFiltteri():
         except:
             raise IndexError('The needed datetime columns not found. Please, make sure that the data contains the following columns: year, month, day, hour, minute and second')
         
-        columns = ['datetime', 'gps_site', 'sat_id', 'gdlatr', 'gdlonr', 'los_tec', 'tec', 'azm', 'elm', 'gdlat', 'glon', 'gnss_type']
+        columns = ['datetime', 'gps_site', 'sat_id', 'los_tec', 'tec', 'elm', 'gdlat', 'glon', 'gnss_type']
 
         # Check if the needed columns are in the dataframe
         for column in columns:
@@ -108,6 +125,37 @@ class KaariFiltteri():
         
         return df
     
+    def process2(self, df): 
+        
+        df['datetime'] = pd.to_datetime(df['datetime'])
+
+        data = df.groupby(['pair_id', 'curve_id']).apply(self.trim_curve).reset_index(drop=True)
+        data['datetime'] = data['datetime'].dt.floor('5min')
+
+        return data
+    
+
+    def trim_curve(self, group):
+        group = group.sort_values('datetime')
+        start_time = group['datetime'].iloc[0] + timedelta(minutes=15)
+        end_time = group['datetime'].iloc[-1] - timedelta(minutes=15)
+
+        return group[(group['datetime'] >= start_time) & (group['datetime'] <= end_time)]    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
     def plot_kaaret(self, df):
 
         df.plot('datetime', 'vtec', 'scatter', c='curve_id', colormap='plasma')
@@ -134,6 +182,11 @@ class KaariFiltteri():
         plt.ylabel('Value')
 
         plt.show()
+
+
+
+
+
 
 
 

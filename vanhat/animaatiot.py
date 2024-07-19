@@ -376,7 +376,7 @@ if __name__ == '__main__':
     #          'data/filtered20230322.csv',
     #          'data/filtered20231202.csv']
 
-    path = 'data/filtered20230322.csv'
+    path = 'testi.csv.csv'
 
     animator = Animator()
 
