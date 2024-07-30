@@ -196,7 +196,7 @@ if __name__ == '__main__':
 
     path = 'data/los/los_20230319.001.h5'
     filtteri = KaariFiltteri()
-    df = filtteri.importdf(path=path, save_df=True, filename='testi.csv')
+    df = filtteri.importdf(path=path, save_df=True, filename='testi.csv', lats=[56,71])
 
     # idlist = list(df['pair_id'].unique())
     # print(df.loc[(df['id'] == idlist[3])]['curve_id'].unique())
