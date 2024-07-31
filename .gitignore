@@ -4,4 +4,4 @@
 *.pdf
 animaatiovalidaatio.ipynb
 *.csv
-
+__pycache__
