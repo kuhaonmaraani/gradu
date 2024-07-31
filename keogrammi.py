@@ -25,15 +25,15 @@ class Keogram():
             raise TypeError('Savename value invalid. Must be of the form name.csv.')
         
         
-        print('Reading data...')
+        #print('Reading data...')
 
         
         df = pd.read_csv(path)
         df['datetime'] = pd.to_datetime(df['datetime'])
 
 
-        print('Done.')
-        print('Applying mask...')
+        #print('Done.')
+        #print('Applying mask...')
 
 
         mask = ((df['glon'] >= self.minlon) & 
@@ -45,8 +45,8 @@ class Keogram():
         df1 = df.loc[(df['glon'] >= self.long) & (df['glon'] <= self.long+1)]
 
 
-        print('Done.')
-        print('Processing data...')
+        #print('Done.')
+        #print('Processing data...')
 
 
         reference_time = df1['datetime'].min()
@@ -62,8 +62,8 @@ class Keogram():
         self.X, self.Y = np.meshgrid((x_edges[:-1] + x_edges[1:]) / 2, (y_edges[:-1] + y_edges[1:]) / 2)
 
 
-        print('Done.')
-        print('Saving data...')
+        #print('Done.')
+        #print('Saving data...')
         
         x_flat = self.X.flatten()
         y_flat = self.Y.flatten()
@@ -90,7 +90,7 @@ class Keogram():
         binned_data_df.to_csv(savename, index=False)
 
         print(f'Data saved at {savename}.')
-        print('All done. Exiting...')
+        #print('All done. Exiting...')
 
 
 
@@ -98,13 +98,13 @@ class Keogram():
 
     def run_df(self, df, savename='', savepath=''):
   
-        print('Reading data...')
+        #print('Reading data...')
 
         df['datetime'] = pd.to_datetime(df['datetime'])
 
 
-        print('Done.')
-        print('Applying mask...')
+        #print('Done.')
+        #print('Applying mask...')
 
 
         mask = ((df['glon'] >= self.minlon) & 
@@ -116,8 +116,8 @@ class Keogram():
         df1 = df.loc[(df['glon'] >= self.long) & (df['glon'] <= self.long+1)]
 
 
-        print('Done.')
-        print('Processing data...')
+        #print('Done.')
+        #print('Processing data...')
 
 
         reference_time = df1['datetime'].min()
@@ -133,8 +133,8 @@ class Keogram():
         self.X, self.Y = np.meshgrid((x_edges[:-1] + x_edges[1:]) / 2, (y_edges[:-1] + y_edges[1:]) / 2)
 
 
-        print('Done.')
-        print('Saving data...')
+        #print('Done.')
+        #print('Saving data...')
         
         x_flat = self.X.flatten()
         y_flat = self.Y.flatten()
@@ -161,7 +161,7 @@ class Keogram():
         binned_data_df.to_csv(savename, index=False)
 
         print(f'Data saved at {savename}.')
-        print('All done. Exiting...')
+        #print('All done. Exiting...')
 
 
 

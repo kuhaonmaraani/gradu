@@ -17,7 +17,7 @@ class KaariFiltteri():
     def importdf(self, path, lats=[59, 71], lons=[19, 32], save_df=False, 
                  filename='filtered_data.csv', paiva=[6,16], min_el=20):
         
-        print('Reading data...')
+        #print('Reading data...')
 
         if path[-2:] == 'h5':
             df = self.read_data(path, lats, lons, paiva, min_el)
@@ -25,17 +25,17 @@ class KaariFiltteri():
             df = pd.read_csv(path)
         else:
             raise ValueError('Error: wrong data file type, only .h5 and .csv accepted.')
-        print('Done.')
+        #print('Done.')
 
-        print('Processing data...')
+        #print('Processing data...')
         df = self.process_data(df)
-        print('Done.')
+        #print('Done.')
 
-        print('Filtering data...')
+        #print('Filtering data...')
         df = self.filter_data(df)
-        print('Done.')
+        #print('Done.')
 
-        print('Trimming the curves...')
+        #print('Trimming the curves...')
         df = self.process2(df)
         df = df[['datetime', 'gdlat', 'glon', 'blrmvd']] ##SÄÄDÄ OUTPUT SARAKKEET
 
@@ -46,7 +46,7 @@ class KaariFiltteri():
             df.to_csv(filename, index=False)
             print(f'Data saved in {filename}.')
         
-        print('All done. Exiting.')
+        #print('All done. Exiting.')
 
         return df
     

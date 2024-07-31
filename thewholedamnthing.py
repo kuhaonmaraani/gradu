@@ -18,7 +18,6 @@ for path in files:
     
     print(f'Creating the keogram for {path}')
     keogram.run_df(df, savepath='data/keog/')
-    keogram.plot()
     print(f'Processing done. {len(files)-i} files to go, progress: {i/len(files)*100:.2f}%')
     i += 1
 
