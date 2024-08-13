@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import binned_statistic_2d as histo2D
-import seaborn as sns
 
 
 
