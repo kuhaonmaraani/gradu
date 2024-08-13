@@ -58,17 +58,22 @@ class KaariFiltteri():
         with h5py.File(path, 'r') as f:
             dset = f['Data']['Table Layout']    # type: ignore
             # Read the necessary columns only
-            data = np.array(dset)
+            filtered_data = []
         
-            # Apply the filters
-            mask = (
-                (data['gdlonr'] >= min_lon) & (data['gdlonr'] <= max_lon) &
-                (data['gdlatr'] >= min_lat) & (data['gdlatr'] <= max_lat) &
-                (data['hour'] >= min_hour) & (data['hour'] <= max_hour) &
-                (data['elm'] >= min_el)
+            # Iterate over the dataset in chunks to avoid memory issues
+            for chunk in dset.iter_chunks():
+                data_chunk = dset[chunk]
+                # Apply the filters to the chunk
+                mask = (
+                    (data_chunk['gdlonr'] >= min_lon) & (data_chunk['gdlonr'] <= max_lon) &
+                    (data_chunk['gdlatr'] >= min_lat) & (data_chunk['gdlatr'] <= max_lat) &
+                    (data_chunk['hour'] >= min_hour) & (data_chunk['hour'] <= max_hour) &
+                    (data_chunk['elm'] >= min_el)
                 )
+                filtered_data.append(data_chunk[mask])
         
-            filtered_data = data[mask]
+        # Concatenate all filtered chunks into a single array
+        filtered_data = np.concatenate(filtered_data, axis=0)
 
         df = pd.DataFrame(filtered_data)  # type: ignore
 

@@ -3,7 +3,7 @@ import glob
 import keogrammi
 import kaariproc
 
-folder_path = 'data/los/'
+folder_path = 'E:/Koulu/data/los/'
 
 files = glob.glob(os.path.join(folder_path, '*.h5'))
 
