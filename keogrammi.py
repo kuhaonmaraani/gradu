@@ -122,7 +122,7 @@ class Keogram():
         reference_time = df1['datetime'].min()
         df1['time_seconds'] = (df1['datetime'] - reference_time).dt.total_seconds()
 
-        time_bin_edges = np.arange(0, df1['time_seconds'].max() + self.timeres, self.timeres)  # 5 minutes in seconds
+        time_bin_edges = np.arange(0, df1['time_seconds'].max() + self.timeres, self.timeres)
         latitude_bin_edges = np.arange(df1['gdlat'].min(), df1['gdlat'].max() + self.res, self.res)
 
         self.statistic, x_edges, y_edges, _ = histo2D(
