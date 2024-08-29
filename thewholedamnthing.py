@@ -17,7 +17,7 @@ for path in files:
     df = filtteri.importdf(path=path, save_df=False, lats=[56,71])
     
     print(f'Creating the keogram for {path}')
-    keogram.run_df(df, savepath='data/keog/')
+    keogram.run_df(df, savepath='E:/Koulu/data/keog/')
     print(f'Processing done. {len(files)-i} files to go, progress: {i/len(files)*100:.2f}%')
     i += 1
 

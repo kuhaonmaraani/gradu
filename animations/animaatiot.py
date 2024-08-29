@@ -18,16 +18,18 @@ class Animator():
         self.elv = elv
         self.daytime = daytime
 
-    def importdf(self, path, save_df=False, filename='processed_data.csv'):
+    def importdf(self, path, save_df=False, filename='processed_data.csv', process=True):
         print('Reading data...')
         if path[-3:] == 'csv':
             df = self.read_data(path)
         else:
             raise ValueError('Error: wrong data file type, only .csv accepted.')
-        print('Done.')
+        
+        if process:
+            print('Done.')
 
-        print('Processing data...')
-        df = self.process(df)
+            print('Processing data...')
+            df = self.process(df)
 
         if save_df:
             print('Done.')
@@ -376,11 +378,11 @@ if __name__ == '__main__':
     #          'data/filtered20230322.csv',
     #          'data/filtered20231202.csv']
 
-    path = 'testi.csv.csv'
+    path = 'E:Koulu/data/hairiopv.csv'
 
     animator = Animator()
 
-    df = animator.importdf(path=path)
+    df = animator.importdf(path=path, process=False)
     # date = path[13:-4]
     # filenames = {'pp':f'pp_{date}.gif', 'histo':f'histo_{date}.gif', 'grid':f'grid_{date}.gif'}
     # animator.animate_all(df, folder='animations/ready/2017', filenames=filenames)
@@ -390,10 +392,6 @@ if __name__ == '__main__':
     #     date = path[13:-4]
     #     filenames = {'pp':f'pp_{date}.gif', 'histo':f'histo_{date}.gif', 'grid':f'grid_{date}.gif'}
     #     animator.animate_all(df, folder='animations/ready/2023', filenames=filenames)
-    list = [[0.2, 0.8] 
-            ]
     
-    for res in list:
-        string = (str(res[0])+str(res[1])).replace('.', '')
-        name = f'res{string}.gif'
-        animator.animate_histo(df, filename=name, folder='', res=res)
+    animator.animate_histo(df, filename='graduesim2.gif', folder='animations/ready/', res=[0.15, 0.7])
+    
