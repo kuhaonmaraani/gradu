@@ -76,6 +76,7 @@ class Keogram():
 
         reference_time = df1['datetime'].min()
         binned_data_df['datetime'] = pd.to_timedelta(binned_data_df['time_seconds']-150, unit='s') + reference_time
+        self.bindf = binned_data_df
         
         
         self.DATETIME = df.iloc[0]['datetime'].date()
@@ -148,7 +149,6 @@ class Keogram():
         reference_time = df1['datetime'].min()
         binned_data_df['datetime'] = pd.to_timedelta(binned_data_df['time_seconds']-150, unit='s') + reference_time
         
-        
         self.DATETIME = df.iloc[0]['datetime'].date()
         
         if savename == '':
@@ -199,6 +199,9 @@ class Keogram():
             print('Done')
             print('Showing the plot...')
             plt.show()
+            plt.close()
+            plt.pcolormesh(self.bindf['time_seconds'], self.bindf['gdlat'], self.bindf['blrmvd'])
+            plt.show()
         
         print('All done. Exiting..')
 
@@ -207,9 +210,9 @@ class Keogram():
 
 if __name__ == '__main__':
 
-    path = 'testi.csv'
+    path = 'E:/Koulu/data/hairiopv.csv'
     keogram = Keogram()
-    keogram.run_csv(path)
+    keogram.run_csv(path, savename='keogramhairiopv.csv', savepath='data/')
 
     keogram.plot()
 
